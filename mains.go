@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"io"
 	"os"
-	"runtime"
 
 	"github.com/mattn/go-isatty"
 
@@ -16,20 +13,6 @@ import (
 	"github.com/zetamatta/nyagos/shell"
 )
 
-type scriptEngineForOptionImpl struct{}
-
-func (*scriptEngineForOptionImpl) SetArg(args []string) {}
-
-func (*scriptEngineForOptionImpl) RunFile(ctx context.Context, fname string) ([]byte, error) {
-	println("Script is not supported.")
-	return nil, nil
-}
-
-func (*scriptEngineForOptionImpl) RunString(ctx context.Context, code string) error {
-	println("Script is not supported.")
-	return nil
-}
-
 func _main() error {
 	sh := shell.New()
 	defer sh.Close()
@@ -37,52 +20,8 @@ func _main() error {
 
 	ctx := context.Background()
 
-	langEngine := func(fname string) ([]byte, error) {
-		return nil, nil
-	}
-	shellEngine := func(fname string) error {
-		fd, err := os.Open(fname)
-		if err != nil {
-			return err
-		}
-		stream1 := shell.NewCmdStreamFile(fd)
-		_, err = sh.Loop(ctx, stream1)
-		fd.Close()
-		if err == io.EOF {
-			return nil
-		}
-		return err
-	}
-
-	script, err := frame.OptionParse(ctx, sh, &scriptEngineForOptionImpl{})
-	if err != nil {
-		return err
-	}
-
-	if !isatty.IsTerminal(os.Stdin.Fd()) || script != nil {
+	if !isatty.IsTerminal(os.Stdin.Fd()) {
 		frame.SilentMode = true
-	}
-
-	if !frame.OptionNorc {
-		if !frame.SilentMode {
-			fmt.Printf("Nihongo Yet Another GOing Shell %s-%s by %s\n",
-				frame.VersionOrStamp(),
-				runtime.GOARCH,
-				runtime.Version())
-			fmt.Println("(c) 2014-2019 NYAOS.ORG <http://www.nyaos.org>")
-		}
-		if err := frame.LoadScripts(shellEngine, langEngine); err != nil {
-			fmt.Fprintln(os.Stderr, err.Error())
-		}
-	}
-
-	if script != nil {
-		if err := script(ctx); err != nil {
-			if err != io.EOF {
-				return err
-			}
-			return nil
-		}
 	}
 
 	var stream1 shell.Stream
