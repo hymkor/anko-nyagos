@@ -1,6 +1,4 @@
-// +build vanilla
-
-package mains
+package main
 
 import (
 	"context"
@@ -32,8 +30,7 @@ func (*scriptEngineForOptionImpl) RunString(ctx context.Context, code string) er
 	return nil
 }
 
-// Main is the main routine on the build without Lua
-func Main() error {
+func _main() error {
 	sh := shell.New()
 	defer sh.Close()
 	sh.Console = nodos.GetConsole()
