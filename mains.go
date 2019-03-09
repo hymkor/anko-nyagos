@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 
 	"github.com/mattn/anko/vm"
 	"github.com/mattn/go-isatty"
@@ -19,10 +20,33 @@ import (
 	"github.com/zetamatta/nyagos/alias"
 )
 
+type ankoFunc struct {
+	f vm.Func
+}
+
+func (this *ankoFunc) Call(ctx context.Context, cmd *shell.Cmd) (next int, err error) {
+	args := cmd.Args()
+	param := make([]reflect.Value, 0, len(args)-1)
+	for _, arg1 := range args[1:] {
+		param = append(param, reflect.ValueOf(arg1))
+	}
+	_, err = this.f(param...)
+	return 0, err
+}
+
+func (this *ankoFunc) String() string {
+	return "ankoFunc"
+}
+
 func ankoAlias(name string, f interface{}) {
 	println(name)
-	if code, ok := f.(string); ok {
+	switch code := f.(type) {
+	case string:
 		alias.Table[name] = alias.New(code)
+	case vm.Func:
+		alias.Table[name] = &ankoFunc{f: code}
+	default:
+		println(reflect.TypeOf(f).String())
 	}
 }
 
@@ -33,18 +57,15 @@ func loadrc(anko *vm.Env) error {
 	}
 	dir := filepath.Dir(execPath)
 	script := filepath.Join(dir, "nyagos.ank")
-	fd, err := os.Open(script)
+	code, err := ioutil.ReadFile(script)
 	if err != nil {
 		return nil
 	}
-	defer fd.Close()
-
-	code, err := ioutil.ReadAll(fd)
-	if err != nil {
-		return err
-	}
 	_, err = anko.Execute(string(code))
-	return err
+	if err != nil {
+		return fmt.Errorf("%s: %s", script, err)
+	}
+	return nil
 }
 
 func _main() error {
