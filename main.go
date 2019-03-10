@@ -41,7 +41,6 @@ func (this *ankoFunc) String() string {
 }
 
 func ankoAlias(name string, f interface{}) {
-	println(name)
 	switch code := f.(type) {
 	case string:
 		alias.Table[name] = alias.New(code)
