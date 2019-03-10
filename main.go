@@ -28,11 +28,7 @@ type ankoFunc struct {
 
 func (this *ankoFunc) Call(ctx context.Context, cmd *shell.Cmd) (next int, err error) {
 	args := cmd.Args()
-	param := make([]reflect.Value, 0, len(args)-1)
-	for _, arg1 := range args[1:] {
-		param = append(param, reflect.ValueOf(arg1))
-	}
-	_, err = this.f(param...)
+	_, err = this.f(reflect.ValueOf(args[1:]))
 	return 0, err
 }
 

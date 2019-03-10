@@ -1,5 +1,7 @@
-func f(value){
-    println(value)
+func f(args){
+    for s in args{
+        println(s)
+    }
 }
 
 alias("foo",f)
